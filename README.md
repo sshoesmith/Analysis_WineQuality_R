@@ -7,10 +7,8 @@ Using R, I investigated which factors may have impacted the quality of the wine.
 acidity, sulphates, to name a few. I used ggplot graphing functions to visualize the data.
 
 In order to view the project, you will need to download R version 3.4.3. The following packages are required:
-GGally
-dpylr
-gridExtra
-knitr
 
-I've also attached a pdf summarizing all the visualizations. 
+GGally,dpylr,gridExtra and knitr.
+
+I've also attached a pdf summarizing all the visualizations.
 
