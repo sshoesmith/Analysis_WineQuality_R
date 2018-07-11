@@ -1,0 +1,1149 @@
+Red Wine Quality Data Analysis by Suzanne Shoesmith
+========================================================
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, packages}
+
+
+install.packages("GGally")
+install.packages('dplyr')
+install.packages("memisc")
+install.packages("knitr")
+install.packages("lmtest")
+install.packages('gridExtra')
+library(ggplot2)
+library(dplyr)
+library(memisc)
+library(gridExtra)
+
+
+```
+
+```{r echo=FALSE, Load_the_Data}
+# Load the Data
+setwd('/Users/sshoesmith/Desktop/UdacityTerm2Project1')
+pf <-read.csv('wineQualityReds.csv')
+
+```
+
+For my project I chose to analyze the data set containing wine 
+quality ratings for red wine. This data set was one of the tidy data sets in
+the suggested data sets in the Udacity link. The data set lists different 
+phsyicochemical properties and corresponding wine quality ratings. The 
+physicochemical properties include acidity, citric acid, sugar, alcohol content,
+etc. The main variable of interest is quality. It will be 
+interesting to determine if any of the other physicochemical
+properties have an impact on the quality of the wine. 
+
+# Univariate Plots Section
+
+In the next few sections, I performed some basic exploration of the 
+data (number of variables, number of columns and rows, and whether or not 
+there are any null values). 
+
+
+```{r echo=FALSE, Univariate_Plots}
+names(pf)
+summary(pf)
+length(pf)
+nrow(pf)
+summary(pf$quality)
+
+
+#check to see if there are any missing values: 
+pf[!complete.cases(pf),]
+str(pf)
+
+
+#Plot to assess the distribution of wine quality
+
+ggplot(aes(x=quality), data = pf) + geom_bar()
+```
+
+This value appears to be discrete, I'll determine the unique values 
+in the variable price to determine the discrete values: 
+```{r echo=FALSE}
+
+table(pf$quality)
+
+```
+Based on the values obtained from the 
+table command there are no ratings that are decimals, they are all whole numbers 
+between 3 and 8. Also, based on the graph, it appears that the majority of wines 
+are rated either a 5 or a 6. Also, there are no wines that were rated on either 
+extreme of quality. 
+
+The next variable that I will examine is Fixed Acidity. 
+
+```{r echo=FALSE}
+#Evaluating the remainder of the variables, making
+#sure to use the min and max to appropriately set
+#the scales
+
+#Univariate Analysis Variable: Fixed Acidity
+
+  
+grid.arrange(
+ggplot(pf, aes( x = 1, y = fixed.acidity)) + 
+  geom_jitter(alpha = 0.1) + 
+  geom_boxplot(alpha = 0.2, color = 'red'), 
+  ggplot(pf, aes(x = fixed.acidity)) + 
+geom_histogram(binwidth = 0.4) + scale_x_continuous() , ncol=2)
+
+summary(pf$fixed.acidity)
+
+```
+
+I initially created a histogram with all the data, and then created a scatterplot
+with a box plot in order to visually determine if there were any outliers that
+I could remove the data set to get a better understanding of the variable 
+fixed.acidity. 
+
+I also summarized this variable Mean, Median, and quartile ranges in order to 
+more accurately remove outliers. The interquartile range for this variable is:
+9.20 - 7.10 = 2.1. 
+An outlier would be 1.5 times this number in either direction. 
+1.5 * 2.1 = 3.15
+lower outliers: Q1 - 3.15
+upper outliers: Q3 + 3.15
+
+lower outlier limit: 7.10 - 3.15 = 3.95 (no lower outliers)
+upper outlier limit: 9.20 + 3.15 = 12.35 (outliers are values greater than 
+12.35, shown as the dots on the box plot)
+
+I'll create another histogram below with the outliers removed. This will provide
+a more accurate representation of this variable. 
+
+
+
+```{r echo=FALSE}
+
+ggplot(pf, aes(x = fixed.acidity)) + 
+geom_histogram(binwidth = 0.3) + scale_x_continuous() +
+  coord_cartesian(xlim = c(4.6,12.35))
+
+
+
+
+```
+
+With the new histogram with cartesian limits it is possible to see that 
+although the data appears skewed to the right, it is less skewed than orginally
+depicted in the histogram containing the outliers. 
+
+
+
+```{r echo=FALSE}
+
+grid.arrange(
+ggplot(pf, aes( x = 1, y = volatile.acidity)) + 
+  geom_jitter(alpha = 0.1) + 
+  geom_boxplot(alpha = 0.2, color = 'red'), 
+  ggplot(pf, aes(x = volatile.acidity)) + 
+geom_histogram(binwidth = 0.035) + scale_x_continuous() , ncol=2)
+
+summary(pf$volatile.acidity)
+
+```
+
+When looking at the plots for volatile acidity, there appear to be outliers
+as inidicated by the red dots on the scatterplot. The summary of this variable 
+is: 
+Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+ 0.1200  0.3900  0.5200  0.5278  0.6400  1.5800
+ 
+The interquartile range is 0.25, and 1.5x this number is 0.375
+Since from the box plot it is obvious there are no lower outliers, 
+I will use cartesian limits to remove upper outliers from the distribution. 
+upper limit: 
+0.64 + 0.375 = 1.015
+
+The updated histogram is shown below: 
+
+
+```{r echo=FALSE}
+#updated histogram of volatile acidity using cartesian  limits removing the 
+#upper outliers from the graph: 
+
+ggplot(pf, aes(x = volatile.acidity)) + 
+geom_histogram(binwidth = 0.05) + scale_x_continuous() +
+  coord_cartesian(xlim = c(0.12,1.015))
+
+
+```
+
+After removing the outliers from the graph and adjusting the binwidth, 
+the distribution of volatile acidity looks more like a normal distribution. 
+
+The next variable I'll analyze is citric acid content: 
+
+```{r echo=FALSE}
+
+
+grid.arrange(
+ggplot(pf, aes( x = 1, y = citric.acid)) + 
+  geom_jitter(alpha = 0.1) + 
+  geom_boxplot(alpha = 0.2, color = 'red'), 
+  ggplot(pf, aes(x = citric.acid)) + 
+geom_histogram(binwidth = 0.02) + scale_x_continuous() , ncol=2)
+
+summary(pf$citric.acid)
+
+
+
+```
+
+Based on the above box plot, there  appears to be only 1 outlier in this
+variable. The summary statistics are as follows: 
+
+ Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+  0.000   0.090   0.260   0.271   0.420   1.000 
+  
+The interquartile range is 0.33, and 1.5x this number is 0.495
+Since from the box plot it is obvious there are no lower outliers, 
+I will use cartesian limits to remove upper outliers from the distribution. 
+upper limit: 
+0.42 + 0.495 = 0.915
+
+The updated histogram is shown below: 
+
+
+```{r echo=FALSE}
+#updated histogram with cartesian limits: 
+
+ggplot(pf, aes(x = citric.acid)) + 
+geom_histogram(binwidth = 0.02) + scale_x_continuous() +
+  coord_cartesian(xlim = c(0.0,0.915))
+```
+
+
+Even after removing the outlier,  this distribution appears to be somewhat random. 
+The next variable I will analyze is residual sugar: 
+
+
+```{r echo=FALSE}
+
+grid.arrange(
+ggplot(pf, aes( x = 1, y = residual.sugar)) + 
+  geom_jitter(alpha = 0.1) + 
+  geom_boxplot(alpha = 0.2, color = 'red'), 
+  ggplot(pf, aes(x = residual.sugar)) + 
+geom_histogram(binwidth = 0.1) + scale_x_continuous() , ncol=2)
+
+summary(pf$residual.sugar)
+```
+
+Based on the scatterplot and the initial histogram, there appear to be a large
+number of high outliers, and the distribution is heavily skewed to the right 
+with these outliers. 
+The summary statistics are as follows: 
+
+Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+  0.900   1.900   2.200   2.539   2.600  15.500 
+
+Removing the outliers and replotting: 
+
+Interquartile range: 2.6 - 1.9 = 0.7
+Upper outlier limit: 2.539 + (0.7*1.5) = 3.589
+Lower outlier limit: 1.9 - (0.7*1.5) = 0.85
+
+```{r echo=FALSE}
+ggplot(pf, aes(x = residual.sugar)) + 
+geom_histogram(binwidth = 0.1) + scale_x_continuous() +
+  coord_cartesian(xlim = c(0.9,3.589))
+
+```
+
+After removing the outliers, the histogram of residual sugar appears to be more
+normally distributed. 
+
+The next variable to be analyzed is chlorides: 
+
+
+
+```{r echo=FALSE}
+
+
+grid.arrange(
+ggplot(pf, aes( x = 1, y = chlorides)) + 
+  geom_jitter(alpha = 0.1) + 
+  geom_boxplot(alpha = 0.2, color = 'red'), 
+  ggplot(pf, aes(x = chlorides)) + 
+geom_histogram(binwidth = 0.01) + scale_x_continuous() , ncol=2)
+
+summary(pf$chlorides)
+
+
+```
+
+Looking at the box plot, there appear to be outliers on both the upper and lower
+edges of the distribution. 
+The summary of the variable chlorides is as follows: 
+
+  Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+0.01200 0.07000 0.07900 0.08747 0.09000 0.61100
+  
+The interqurtile range and outliers are: 
+Interquartile range: 0.09 - 0.07 = 0.02
+Upper outlier limit: 0.09 + (0.02*1.5) = 0.12
+Lower outlier limit: 0.07 - (0.02*1.5) = 0.04
+
+Replotting after removing the outliers from the plot: 
+
+```{r echo=FALSE}
+#replot after removing outliers using cartesian limits: 
+
+
+ggplot(pf, aes(x = chlorides)) + 
+geom_histogram(binwidth = 0.006) + scale_x_continuous() +
+  coord_cartesian(xlim = c(0.04,0.12))
+
+```
+
+After adjusting the limits and the binwidth, the chlorides variable appears
+to be normally distributed. 
+
+The next variable to be analyzed is free sulfur dioxide: 
+
+
+```{r echo=FALSE}
+ggplot(aes(x = free.sulfur.dioxide), data = pf) +
+  geom_histogram(binwidth = 2) +
+  scale_x_continuous()
+
+grid.arrange(
+ggplot(pf, aes( x = 1, y = free.sulfur.dioxide)) + 
+  geom_jitter(alpha = 0.1) + 
+  geom_boxplot(alpha = 0.2, color = 'red'), 
+  ggplot(pf, aes(x = free.sulfur.dioxide)) + 
+geom_histogram(binwidth = 2) + scale_x_continuous() , ncol=2)
+
+summary(pf$free.sulfur.dioxide)
+
+
+
+```
+
+Looking at the box plot it is clear that there are outliers in the variable 
+free sulfur dioxide. The summary of the variable is as follows: 
+
+ Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+   1.00    7.00   14.00   15.87   21.00   72.00 
+   
+The interqurtile range and outliers are: 
+Interquartile range: 21.00 - 7.00 = 14
+Upper outlier limit: 21 + (14*1.5) = 42
+Lower outlier limit: 7-(14*1.5) = -14
+
+
+Replotting after removing the outliers from the plot: 
+   
+```{r echo=FALSE}
+#replotting after removing outliers: 
+ggplot(pf, aes(x = free.sulfur.dioxide)) + 
+geom_histogram(binwidth = 1) + scale_x_continuous() +
+  coord_cartesian(xlim = c(1,42))
+
+
+```
+
+After applying cartesian limits and adjusting the binwidth, the distribution
+still appears to be skewed to the right. 
+
+The next variable I"ll analyze is density: 
+
+
+```{r echo=FALSE}
+
+grid.arrange(
+ggplot(pf, aes( x = 1, y = density)) + 
+  geom_jitter(alpha = 0.1) + 
+  geom_boxplot(alpha = 0.2, color = 'red'), 
+  ggplot(pf, aes(x = density)) + 
+geom_histogram(binwidth = 0.0005) + scale_x_continuous() , ncol=2)
+
+
+summary(pf$density)
+
+
+
+```
+
+The distribution of density appears normal, but the box plot shows there are some
+outliers, both on the lower and higher ends. The summary of the variable density
+is as follows: 
+
+Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+ 0.9901  0.9956  0.9968  0.9967  0.9978  1.0037
+ 
+ The interqurtile range and outliers are: 
+Interquartile range: 0.9978 - 0.9956 = 0.0022
+Upper outlier limit: 0.9978 + 1.5(0.0022) = 1.0011
+Lower outlier limit: 0.9956 - 1.5(0.0022) = 0.9923
+
+replotting after applying cartesian limits: 
+
+```{r echo=FALSE}
+#replotting density after applying cartesian limits: 
+
+ggplot(pf, aes(x = density)) + 
+geom_histogram(binwidth = 0.0004) + scale_x_continuous() +
+  coord_cartesian(xlim = c(0.9923,1.0011))
+```
+
+I replotted density using the cartesian limits and adjusted with binwidth. 
+The data still appears normally distributed. After removing outliers, the tails
+on either end are smaller. 
+
+The next variable for analysis is pH: 
+
+
+
+```{r echo=FALSE}
+
+
+grid.arrange(
+ggplot(pf, aes( x = 1, y = pH)) + 
+  geom_jitter(alpha = 0.1) + 
+  geom_boxplot(alpha = 0.2, color = 'red'), 
+  ggplot(pf, aes(x = pH)) + 
+geom_histogram(binwidth = 0.05) + scale_x_continuous() , ncol=2)
+
+
+summary(pf$pH)
+
+
+
+
+```
+
+The distribution of pH in the dataset appears to be normally distributed with 
+some outliers. The summary of the variable is as follows: 
+
+Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+  2.740   3.210   3.310   3.311   3.400   4.010
+
+
+The interqurtile range and outliers are: 
+Interquartile range: 3.4 - 3.210 = 0.19
+Upper outlier limit: 3.4 + 1.5(0.19) = 3.685
+Lower outlier limit: 3.210 - 1.5(0.19) = 2.925
+
+replotting after applying cartesian limits: 
+
+```{r echo=FALSE}
+#replotting density after applying cartesian limits: 
+
+ggplot(pf, aes(x = pH)) + 
+geom_histogram(binwidth = 0.05) + scale_x_continuous() +
+  coord_cartesian(xlim = c(2.925,3.685))
+```
+
+After removing the outliers and applying cartesian limits the pH data still 
+appears normally distributed. 
+
+
+```{r echo=FALSE}
+
+grid.arrange(
+ggplot(pf, aes( x = 1, y = sulphates)) + 
+  geom_jitter(alpha = 0.1) + 
+  geom_boxplot(alpha = 0.2, color = 'red'), 
+  ggplot(pf, aes(x = sulphates)) + 
+geom_histogram(binwidth = 0.03) + scale_x_continuous() , ncol=2)
+
+summary(pf$sulphates)
+
+
+```
+
+The data for sulphates appears to be skewed to the right. Looking at the 
+box plot there are outliers on the upper end of the distribution. 
+
+The summary of the variable is as follows: 
+
+Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+ 0.3300  0.5500  0.6200  0.6581  0.7300  2.0000 
+ 
+The interqurtile range and outliers are: 
+Interquartile range: 0.73 - 0.55 = 0.18
+Upper outlier limit: 0.73 + 1.5(0.18) = 1
+Lower outlier limit: 0.55 - 1.5(0.18) = 0.28
+
+replotting after applying cartesian limits: 
+
+```{r echo=FALSE}
+
+ggplot(pf, aes(x = sulphates)) + 
+geom_histogram(binwidth = 0.03) + scale_x_continuous() +
+  coord_cartesian(xlim = c(0.33,1))
+
+```
+
+In this case, even after removing the upper outliers, the distribution is still 
+skewed to the right. 
+
+The next variable to analyze is alcohol: 
+
+
+
+```{r echo=FALSE}
+
+
+grid.arrange(
+ggplot(pf, aes( x = 1, y = alcohol)) + 
+  geom_jitter(alpha = 0.1) + 
+  geom_boxplot(alpha = 0.2, color = 'red'), 
+  ggplot(pf, aes(x = alcohol)) + 
+geom_histogram(binwidth = 0.1) + scale_x_continuous() , ncol=2)
+
+summary(pf$alcohol)
+
+
+
+
+```
+
+
+The distribution of alcohol is skewed to the right. The summary of the variable 
+is as follows: 
+
+Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+   8.40    9.50   10.20   10.42   11.10   14.90 
+   
+The interqurtile range and outliers are: 
+Interquartile range: 11.1 - 9.5 = 1.6
+Upper outlier limit: 11.1 + 1.5(1.6) = 13.5
+Lower outlier limit: 9.5 - 1.5(1.6) = 7.1
+
+replotting after applying cartesian limits to remove the upper outliers: 
+
+```{r echo=FALSE}
+ggplot(pf, aes(x = alcohol)) + 
+geom_histogram(binwidth = 0.1) + scale_x_continuous() +
+  coord_cartesian(xlim = c(8.4,13.5))
+```
+
+This variable still appears heavily skewed to the right. 
+
+
+
+For all of the above plots, I chose binwidths that didn't overly smooth out the 
+distribution, but not so small that it wasn't possible to observe
+the shape of the distribution. 
+
+There are a few observations I made about these single 
+variable plots: 
+
+- Most variables appear to be normally distributed or skewed to the right. I did 
+not notice any variables that were skewed to the left. 
+
+- Variables that appear to be slightly skewed to the right are
+fixed acidity, volatile acidity, free sulfur dioxide, sulphates, and 
+alcohol. That is most wines in 
+the data set have low values for these variables. 
+
+- Variables showing a long tail are alcohol 
+and sulphates. 
+
+- The histogram for citric acid appeared to be somewhat random, 
+with most values at zero. 
+
+Finally, looking at the distribution for alcohol content the distribution 
+appears to be
+somwhat skewed to the right, with the largest population around 9.5%. 
+
+In addition to the univariate plots shown above, I created another variable, 
+called alcohol_level, which is a categorical variable for the alcohol level. 
+I divided the alcohol level into "low", "medium", and "high", using the levels: 
+
+Alcohol percentage of 7.4 - 9.5: low
+Alcohol percenrage of 9.5 - 11.1: medium
+Alcohol percentage of 11.1 - 15: high
+
+The plot below shows the distribution of this variable: 
+
+```{r echo=FALSE}
+#creating a new variable that will categorize alcohol level into 
+#low, medium, and high for the purposes of graphing
+pf$alcohol_level <- cut(pf$alcohol, breaks = c(7.40, 9.5, 11.10, 15), labels 
+= c("low", "medium", "high"))
+head(pf)
+
+#creating the graph of the new variable: 
+
+ggplot(pf, aes(alcohol_level)) + geom_bar() 
+ 
+
+
+```
+
+Based on the distribution of the alcohol level, most wines in the dataset fall 
+into the medium alcohol level (that is, an alcohol % of 9.5 - 11.1). 
+
+
+### What is the structure of your dataset?
+The dataset contains 1599 rows and 13 variables. 
+There are no null values. I also determined that the X column and the quality 
+variables are integers while all other variables are numbers.
+
+### What is/are the main feature(s) of interest in your dataset?
+The main feature of interest in the dataset is quality rating. 
+
+
+### What other features in the dataset do you think will help support your \
+investigation into your feature(s) of interest?
+The features in the dataset that would support the investigation are the 
+physicochemical properties in the dataset. To name a few, these are alcohol, 
+residual sugar, sulphates, etc.  
+
+### Did you create any new variables from existing variables in the dataset?
+The additional 
+variables were alcohol_level (based on the quartile ranges). 
+
+### Of the features you investigated, were there any unusual distributions? 
+The distributions are descibed above. 
+Did you perform any operations on the data to tidy, adjust, or change the form 
+of the data? If so, why did you do this?
+The data was already tidy, I didn't need to perform any additional operations. 
+
+
+# Bivariate Plots Section
+
+To start to gain an understanding of a possible correlation between 
+the physicochemical properties and quality, I plotted a scatterplot matrix of 
+all the variables in the dataset. I made a few interesting observations. 
+
+```{r echo=FALSE}
+
+setwd('/Users/sshoesmith/Desktop/UdacityTerm2Project1')
+pf <-read.csv('wineQualityReds.csv')
+
+
+#break it up into multiple plots to improve readability: 
+pair1 <- data.frame(fixed_acidity = pf$fixed.acidity,
+volatile_acidity = pf$volatile.acidity,
+citric_acid = pf$citric.acid,
+res_sugar = pf$residual.sugar,
+chlorides = pf$chlorides,
+quality = pf$quality)
+GGally::ggpairs(pair1)  + theme_grey(base_size = 8)
+        
+        
+pair2 <- data.frame(free_sulfur = pf$free.sulfur.dioxide,
+total_sulfur = pf$total.sulfur.dioxide,
+density = pf$density,
+pH = pf$pH,
+sulphates = pf$sulphates,
+alcohol = pf$alcohol,
+quality = pf$quality)
+GGally::ggpairs(pair2)  + theme_grey(base_size = 8)
+        
+        
+```
+
+Another way to summarize the correlation coefficients is using ggcorr: 
+
+```{r echo=FALSE}1
+#summarizing coefficients using ggcor: 
+
+setwd('/Users/sshoesmith/Desktop/UdacityTerm2Project1')
+pf <-read.csv('wineQualityReds.csv')
+
+GGally::ggcorr(pf, label = TRUE, label_size = 2, label_round = 2,
+               hjust = 0.8, size = 3, name = "Correlation")  
+                
+
+
+```
+
+The above ggcorr visualization more clearly summarizes the correlation 
+coefficients for all the variables in the dataset. 
+
+
+# Bivariate Analysis
+
+
+### Talk about some of the relationships you observed in this part of the \
+investigation. How did the feature(s) of interest vary with other features in \
+the dataset?
+
+Using the scatterplot matrix, I looked at the variable
+quality and looked at the correlation coefficients to 
+determine where if at all there is a correlation, specifically with quality. 
+The greatest correlation is a value of 0.476, which is the
+correlation coefficient between the two variables alcohol (which refers to 
+alcohol content) and quality. To further investigate this, I created a 
+boxplot of alcohol content and quality, and use color to differentiate 
+between the different alcohol levels. 
+
+
+To further clarify, I created a box plot summarizing the alcohol content of 
+different quality ratings. Alcohol content does seem to impact quality rating, 
+but only when the alcohol content is above 10. It's also interesting to look at 
+the median of the alcohol % for each quality level. 
+
+```{r echo=FALSE}
+
+
+#box plot of alcohol vs quality
+pf$quality <- factor(pf$quality)
+ggplot(aes(x = quality, y = alcohol),
+  data = pf) + 
+  geom_jitter(alpha = 0.3) + 
+  geom_boxplot(alpha = 0.5, color = 'blue') + 
+  stat_summary(fun.y = "mean",
+               geom = "point",
+               color = "red",
+               shape = 8,
+               size = 4)
+  
+#line showing the median of the alcohol rating vs. quality level
+setwd('/Users/sshoesmith/Desktop/UdacityTerm2Project1')
+pf <-read.csv('wineQualityReds.csv')
+
+pf <- transform(pf,alcohol_sulphates = alcohol + sulphates)
+head(pf)
+
+pf2 <- pf %>%
+  group_by(quality) %>%
+  summarize(alcohol_sulphate_mean = mean(alcohol_sulphates),
+  alcohol_sulphates_median = median(alcohol_sulphates),
+  alcohol_median = median(alcohol),
+  sulphates_median = median(sulphates),
+  n = n())%>%
+  ungroup()%>%
+  arrange(quality)
+  
+
+
+  
+```
+
+As seen from the box plot, the quality rating seems to be increasing with the 
+increase in the alcohol_median, but only above an alcohol media of 10 % and a 
+quality rating of 5.  
+
+Another possible correlation is quality with sulphates. The correlation 
+coefficient is 0.251.  I plotted a box plot to look at this relationship.
+I used limits to get a better view of the data without the outliers. When I 
+decreased the scale of the y aixs to 95% of the values on the upper limit, the 
+trend became a little more obvious. It appears that the between the wine quality 
+values of 4 and 7, the amount of sulphates is higher. and then levels off 
+between the quality ratings of 7 and 8. Just like in the previous set of graphs, 
+I thought it would be interesting to calculate the median sulphate per quality 
+rating and plot that vs. quality rating. 
+
+```{r echo=FALSE}
+
+
+#box plot of sulphates vs quality
+pf$quality <- factor(pf$quality)
+ggplot(aes(x = quality, y = sulphates),
+  data = pf) + 
+  geom_jitter(alpha = 0.3) + 
+  ylim(0.25, quantile(pf$sulphates, 0.95)) +
+  geom_boxplot(alpha = 0.5, color = 'blue') + 
+  stat_summary(fun.y = "mean",
+               geom = "point",
+               color = "red",
+               shape = 8,
+               size = 4)
+  
+#calculating median of alcohol + sulphates per quality rating
+setwd('/Users/sshoesmith/Desktop/UdacityTerm2Project1')
+pf <-read.csv('wineQualityReds.csv')
+
+pf <- transform(pf,alcohol_sulphates = alcohol + sulphates)
+head(pf)
+
+pf2 <- pf %>%
+  group_by(quality) %>%
+  summarize(alcohol_sulphate_mean = mean(alcohol_sulphates),
+  alcohol_sulphates_median = median(alcohol_sulphates),
+  alcohol_median = median(alcohol),
+  sulphates_median = median(sulphates),
+  n = n())%>%
+  ungroup()%>%
+  arrange(quality)
+  
+
+
+```
+
+The box plot of sulphates vs. quality rating appear that as sulphates increase, 
+the quality of the wine increases. 
+Sulphates seem to be increasing with increasing wine quality 
+rating. Unlike the alcohol content plots, this plot shows a more dramatic 
+increase, followed by a levelling off at a quality rating of 7. 
+
+
+Since I noticed that both alcohol and sulphates may be correlated with quality, 
+I created an additional variable, the sum of alcohol content and sulphates, and 
+plotted that against quality. I also plotted a summary of the median 
+alcohol_sulphates variable vs. Quality for each quality rating. 
+
+```{r echo=FALSE}
+
+#creating a new variable called alcohol_sulphates
+#that will sum up. alcohol and sulphates. 
+setwd('/Users/sshoesmith/Desktop/UdacityTerm2Project1')
+pf <-read.csv('wineQualityReds.csv')
+
+
+pf <- transform(pf,alcohol_sulphates = alcohol + sulphates)
+head(pf)
+
+pf2 <- pf %>%
+  group_by(quality) %>%
+  summarize(alcohol_sulphate_mean = mean(alcohol_sulphates),
+  alcohol_sulphates_median = median(alcohol_sulphates),
+  alcohol_median = median(alcohol),
+  sulphates_median = median(sulphates),
+  n = n())%>%
+  ungroup()%>%
+  arrange(quality)
+  
+
+pf$quality <- factor(pf$quality)
+
+ggplot(aes(x = factor(quality), y = alcohol_sulphates), data = pf) + 
+  geom_jitter(alpha = 0.3) +
+  geom_boxplot(alpha = 0.5, color = "blue") +
+  stat_summary(fun.y = "mean",
+               geom = "point",
+               color = "red",
+               shape = 8,
+               size = 4)
+  ylim(9.5, quantile(pf$alcohol_sulphates, 0.95))
+  
+
+```
+
+Looking at the above box plot of alcohol + sulphates vs. quality, the trend 
+appears very similar to alcohol vs. quality and sulphates vs. quality. There 
+is a dip at the quality rating of 5, but overall there appears to be an increase 
+in quality rating with an increase in the variable alcohol + sulphates. 
+
+To further explore the relationship between alcohol content and quality, I made 
+a bar graph summarizing the different alcohol levels, shaded by quality: 
+
+```{r echo=FALSE}
+
+pf$alcohol_level <- cut(pf$alcohol, breaks = c(7.40, 9.5, 11.10, 15), labels 
+= c("low", "medium", "high"))
+head(pf)
+
+ggplot(pf, aes(quality)) + geom_bar(aes(fill = alcohol_level)) +
+xlab('Quality Rating') +
+ylab('Count') + 
+ggtitle("Distribution of Quality Ratings")
+
+
+
+```
+
+It's interesting to note that the area in blue in the graph above (representing 
+the "high" alcohol level, that is, a percentage greater than 11.10) seems to be 
+increasing with the quality rating and the portion of the bar in green seems to 
+be decreasing. This bar graph suggests that the proportion of wines that are 
+higher in alcohol % is greater in wines with a higher quality rating when 
+compared to a lower quality rating. To determine if this was the case, I 
+calculated the proporting of high alcohol level wines in each quality group and 
+plotted vs. quality: 
+
+```{r echo=FALSE}
+setwd('/Users/sshoesmith/Desktop/UdacityTerm2Project1')
+pf <-read.csv('wineQualityReds.csv')
+
+pf$alcohol_level <- cut(pf$alcohol, breaks = c(7.40, 9.5, 11.10, 15), labels 
+= c("low", "medium", "high"))
+head(pf)
+
+pf3 <- pf %>%
+  group_by(quality) %>%
+  summarise(
+  num_high_alc = sum((alcohol_level == 'high'), na.rm=TRUE),
+  n(),
+  mean_alcohol = mean(alcohol),
+  proportion_high = num_high_alc/n())%>%
+  ungroup()%>%
+  arrange(quality)
+
+head(pf3)
+
+#plot
+ggplot(aes(x = factor(quality), y = proportion_high),
+  data = pf3) + geom_jitter() + xlab('Quality Rating') +
+ylab('Proportion of Wines with Alcohol Percentage above 11.1') + 
+ggtitle("Proportion of Wines with Alcohol Percentage above 11.1 vs. Quality 
+Rating") + 
+theme(text = element_text(size = 8))
+
+
+
+```
+
+Interestingly, there does appear to be an upward trend in the proportion of 
+wines with an alcohol % of greater than 11.10 as the quality rating goes up. 
+There is a dip at the quality rating of 5, but in general there appears to be an 
+upward trend. What's interesting also is that at a quality rating of 8, almost 
+80% of the wines are above an alcohol percentage of 11.10. 
+
+
+### Did you observe any interesting relationships between the other features \
+
+(not the main feature(s) of interest)?
+
+I found some relationships the can be explained by the physicochemical 
+properties. For example, acetic acid content decreases the pH. 
+There was a correlation coefficient of -0.496 between alcohol content and 
+density. Another relationship that makes sense is the relationship between pH 
+and fixed acidity (pH decreases as fixed acidity increases, correlation -0.683). 
+These variables are due to nature (that is, pH is defined by acidity).  
+
+### What was the strongest relationship you found?
+
+The strongest relationship that I found was between alcohol content and quality. 
+
+# Multivariate Plots Section
+
+Although based on what I've seen so far with the correlation coefficients and 
+the visualizations, it appears that alcohol content has the greatest relationship 
+to quality rating, with sulphates also appearing to be somewhat correlated with 
+quality. However, the multivariate plots below look to further investigate any 
+additional relationships between variables. 
+
+In addition to alcohol content and sulphates, I'll plot variables that are 
+related (based on the scatter plot matrix) such as pH and fixed acidity. 
+
+
+```{r echo=FALSE}
+pf$quality <- factor(pf$quality)
+
+#scatter plot of alcohol vs. pH  (shaded by #quality)
+ggplot(aes(x = pH, y = alcohol, color = factor(quality)), 
+       data = pf) + 
+  geom_point(alpha = 0.8, size = 1) +
+  scale_color_brewer(type = 'seq', guide=guide_legend(title = "Quality")) + 
+  geom_smooth(method = 'lm', se = FALSE, size = 1) + 
+  theme_dark()
+  
+#scatter plot of pH vs. fixed acidity (shaded by quality)
+ggplot(aes(x = fixed.acidity, y = pH, color = factor(quality)), 
+       data = pf) + 
+  geom_point(alpha = 0.8, size = 1) +
+  scale_color_brewer(type = 'seq', guide=guide_legend(title = "Quality")) + 
+  geom_smooth(method = 'lm', se = FALSE, size = 1)
+  
+  
+#scatter plot of alcohol content vs. sulphates (shaded by quality)
+ggplot(aes(x = alcohol, y = sulphates, color = factor(quality)), 
+       data = pf) + 
+  geom_point(alpha = 0.8, size = 1) + 
+  ylim(0.25, 1.3) + 
+  scale_color_brewer(type = 'seq', guide=guide_legend(title = "Quality")) + 
+  geom_smooth(method = 'lm', se = FALSE, size = 1)
+
+
+```
+
+Looking at the first multivariate scatterplots in the above section (alcohol
+vs pH shaded by quality with a linear regression model added) for quality
+ratings 5, 6, 7, and 8, the linear model gets steeper with each increasing 
+quality rated wine. In other words, there appears to be a stronger relationship 
+of alcohol % to pH for higher quality wines when compared to lower quality
+wines. 
+ 
+For the plot of pH vs. fixed acidity, the relationship between pH and fixed 
+acidity makes sense, since increasing acidity naturally decreased the pH. 
+However, it's difficult to make out any patterns with regards to quality in 
+this graph. 
+
+The third multivariate plot reflects the same observation I made previously. 
+That is, lower alcohol and lower sulphates appear to be correlated with lower 
+quality, and higher sulphates and higher alcohol % seem to be correlated with 
+higher quality ratings. That is, the darker lines corresponding to higher quality
+wines are higher on the graph (corresponding to higher sulphates). It's less 
+clear with alcohol content. 
+
+As a follow up to the third graph, I am calculating the correlation coefficient 
+of the alcohol+ sulphates variable with quality. 
+
+```{r echo=FALSE}
+setwd('/Users/sshoesmith/Desktop/UdacityTerm2Project1')
+pf <-read.csv('wineQualityReds.csv')
+
+pf <- transform(pf,alcohol_sulphates = alcohol + sulphates)
+
+
+#calculate the correlation coefficient of the combined variable: 
+cor.test(pf$alcohol_sulphates, pf$quality, method = 'pearson')
+with(pf, cor.test(alcohol_sulphates, quality, method = 'pearson'))
+
+#calculate the correlation coefficient with just the variable 
+#alcohol
+cor.test(pf$alcohol, pf$quality, method = 'pearson')
+with(pf, cor.test(alcohol, quality, method = 'pearson'))
+
+#calculate the correlation coefficient of quality with the variable
+#sulphates
+cor.test(pf$sulphates, pf$quality, method = 'pearson')
+with(pf, cor.test(sulphates, quality, method = 'pearson'))
+
+```
+
+# Multivariate Analysis
+Adding the sulphates and the alcohol variables 
+together was an attempt to see an additive effect of both variables on quality, 
+since looking at each individually there appeared to be a small correlation. 
+This can also be done using a linear model. 
+
+
+```{r echo=FALSE}
+#linear model using alcohol content and sulphates
+
+head(pf)
+
+m1 <- lm(I(quality) ~ I(alcohol), data = pf)
+m2 <- update(m1, ~ . + sulphates)
+
+mtable(m1, m2)
+```
+
+
+### Were there any interesting or surprising interactions between features?
+The interesting interaction was between alcohol and sulphates and 
+the impact on quality. When added together these two variables resulted in a 
+pearson's correlation coefficient of 0.5. It's surprising that sulphates would 
+impact the correlation with quality. Without sulphates, the correlation 
+coefficient was 0.476. 
+
+### OPTIONAL: Did you create any models with your dataset? Discuss the \
+strengths and limitations of your model.
+I created a linear model. The model included the variables alcohol and sulphates 
+and quality. 
+The model appears to be a weak model, with an R 
+squared value of 0.227 without including sulphates and an R squared value of 
+0.270 after including sulphates. 
+
+------
+
+# Final Plots and Summary
+
+
+
+### Plot One
+```{r echo=FALSE}
+setwd('/Users/sshoesmith/Desktop/UdacityTerm2Project1')
+pf <-read.csv('wineQualityReds.csv')
+
+
+
+GGally::ggcorr(pf, label = TRUE, label_size = 2, label_round = 2,
+               hjust = 0.8, size = 3, name = "Correlation")  
+
+
+```
+
+### Description One
+The first graph that I chose is the ggcorr summary with all of the original
+variables in the data set. I found this information most useful when 
+starting the analysis. Looking at the correlation coefficients of quality with 
+alcohol and sulphates, since they were the highest, helped in finding a few 
+variables to start the analysis with. 
+
+
+### Plot Two
+```{r echo=FALSE}
+
+#plot showing a bar graph color-filled by alcohol content
+pf$alcohol_level <- cut(pf$alcohol, breaks = c(7.40, 9.5, 11.10, 15), labels 
+= c("low", "medium", "high"))
+head(pf)
+
+ggplot(pf, aes(quality)) + geom_bar(aes(fill = alcohol_level)) +
+xlab('Quality Rating') +
+ylab('Count') + 
+ggtitle("Bar Graph Distribution of Wine Quality Ratings Shaded by 
+        Categorical % Alcohol Level") + 
+guides(fill=guide_legend(title = "Categorical % Alcohol"))
+
+
+
+
+```
+
+### Description Two
+I chose this as my second graph because I thought it shows very nicely how the 
+proportion of blue (A high alcohol level as defined in this analysis) in each 
+graph increases with increasing quality rating. At the same the proportion low 
+alcohol wines seems to be decreasing with increasing quality. 
+
+
+### Plot Three
+```{r echo=FALSE}
+#A plot of the proportion of high alcohol levels per #quality rating
+#Overall disctribution of quality
+setwd('/Users/sshoesmith/Desktop/UdacityTerm2Project1')
+pf <-read.csv('wineQualityReds.csv')
+
+#box plot of sulphates vs quality
+pf$quality <- factor(pf$quality)
+ggplot(aes(x = quality, y = sulphates),
+  data = pf) + 
+  geom_jitter(alpha = 0.3) + 
+  ylim(0.25, quantile(pf$sulphates, 0.95)) +
+  geom_boxplot(alpha = 0.5, color = 'blue') + 
+  stat_summary(fun.y = "mean",
+               geom = "point",
+               color = "red",
+               shape = 8,
+               size = 4) +
+      xlab('Wine Quality Rating') +
+      ylab('Sulphate Content in Wine') + 
+      ggtitle("Box Plot of Sulphate Content in Wine vs. 
+        Wine Quality Rating")
+
+
+
+```
+
+### Description Three
+I chose this graph for my final figure because it summarizes one of the
+factors that I noticed had the strongest relationship to quality rating 
+(sulphates). From this box plot, it's easy to see a gradual increase in wine 
+quality rating with increasing sulphate concentration. 
+------
+
+# Reflection
+
+
+I found the project very interesting, and enjoyed working through the analysis 
+and finding which physicochemical proporties could impact the quality rating. I 
+found that alcohol level (and possibly sulphate content) seemed to be related to 
+quality rating. 
+The difficulty came in explaining the dip in the alcohol content at the quality 
+rating of 5. This could be due to several factors, but one that I can think of 
+is the error/subjectiveness of the assignment of the quality rating to the 
+different wines. The process is manual, and based on sensory response from the 
+judges. Also, perhaps it is easier for a wine taster to discern a very good wine 
+from a very bad wine, but the values in the middle may become more difficult 
+to assign. 
+
+Another challenge comes from the limited number of ratings. The range of quality 
+ratings span only from 3 to 8. This gives us a smaller space to work in with 
+regards to finding any trends in the data. 
+
+The matrix scatterplot helped in terms of finding a place to start in terms of 
+which variables could be related to wine quality. Perhaps I would've started 
+with acidity instead of sulphates. Using the scatterplot I was able to narrow 
+in on a couple of variables. It surprised me that sulphates were mildly related 
+to rating, I wouln't have guessed that. 
+
+Future work that can be done with this dataset could entail expanding the 
+dataset to include a wider range of quality ratings. This could possibly clarify 
+any possible relationships between physicochemical proporties and wine quality. 
+
+
+
